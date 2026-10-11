@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sesim Ol</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f1f5ff;
+  color: #172554;
+}
+
+header {
+  background: linear-gradient(135deg, #6255e7, #a855f7);
+  color: white;
+  padding: 28px 16px;
+  text-align: center;
+  border-radius: 0 0 28px 28px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 34px;
+}
+
+header p {
+  margin-bottom: 0;
+}
+
+main {
+  width: min(900px, 94%);
+  margin: 22px auto;
+}
+
+h2 {
+  font-size: 21px;
+}
+
+.categories, .buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 17px;
+  padding: 18px 12px;
+  font-size: 17px;
+  font-weight: bold;
+  min-height: 66px;
+  color: #172554;
+  background: white;
+  box-shadow: 0 3px 12px #243b5320;
+  overflow-wrap: anywhere;
+}
+
+button:focus-visible, input:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 3px;
+}
+
+.category.active {
+  background: #6255e7;
+  color: white;
+}
+
+#sentenceBox {
+  background: white;
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: 22px;
+  box-shadow: 0 4px 18px #243b5315;
+}
+
+#sentence {
+  min-height: 48px;
+  font-size: 23px;
+  overflow-wrap: anywhere;
+}
+
+input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #dbe3f0;
+  border-radius: 12px;
+  font-size: 17px;
+  margin-bottom: 12px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.speak {
+  background: #16a879;
+  color: white;
+}
+
+.clear {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+footer {
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+  padding: 20px;
+}
+
+@media (min-width: 650px) {
+  .categories {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .buttons {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>💜 Sesim Ol</h1>
+  <p>Sen seç, ben seslendireyim!</p>
+</header>
+
+<main>
+  <h2>📚 Bir kategori seç</h2>
+
+  <div class="categories">
+    <button class="category active" data-category="ihtiyac">
+      🥤 İhtiyaçlar
+    </button>
+    <button class="category" data-category="duygu">
+      😊 Duygular
+    </button>
+    <button class="category" data-category="gunluk">
+      💬 Günlük konuşma
+    </button>
+  </div>
+
+  <h2>🗨️ Ne söylemek istiyorsun?</h2>
+  <div class="buttons" id="phraseButtons"></div>
+
+  <section id="sentenceBox">
+    <h2>📝 Cümlen</h2>
+    <div id="sentence" aria-live="polite">
+      Burada seçtiğin cümle görünecek.
+    </div>
+
+    <input
+      id="customText"
+      type="text"
+      maxlength="500"
+      placeholder="Buraya kendi cümleni yaz..."
+      aria-label="Seslendirilecek cümle"
+    >
+
+    <div class="actions">
+      <button class="speak" id="speakButton">
+        🔊 Seslendir
+      </button>
+      <button class="clear" id="clearButton">
+        🗑️ Temizle
+      </button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+  </section>
+</main>
+
+<footer>
+  Sesim Ol • Kamera gerektirmez • İlk sürüm
+</footer>
+
+<script>
+const phrases = {
+  ihtiyac: [
+    "Su istiyorum.",
+    "Yemek istiyorum.",
+    "Yardım eder misin?",
+    "Tuvalete gitmek istiyorum.",
+    "Dinlenmek istiyorum.",
+    "Kendimi iyi hissetmiyorum."
+  ],
+  duygu: [
+    "Mutluyum.",
+    "Üzgünüm.",
+    "Korkuyorum.",
+    "Heyecanlıyım.",
+    "Yorgunum.",
+    "Biraz yalnız kalmak istiyorum."
+  ],
+  gunluk: [
+    "Merhaba!",
+    "Evet.",
+    "Hayır.",
+    "Teşekkür ederim.",
+    "Lütfen bekle.",
+    "Seni anlamadım."
+  ]
+};
+
+const phraseButtons = document.getElementById("phraseButtons");
+const sentence = document.getElementById("sentence");
+const customText = document.getElementById("customText");
+const status = document.getElementById("status");
+
+let selectedPhrases = [];
+
+function updateSentence() {
+  const text = [
+    ...selectedPhrases,
+    customText.value.trim()
+  ].filter(Boolean).join(" ");
+
+  sentence.textContent = text || "Burada seçtiğin cümle görünecek.";
+}
+
+function showPhrases(category) {
+  phraseButtons.replaceChildren();
+
+  phrases[category].forEach((phrase) => {
+    const button = document.createElement("button");
+    button.textContent = phrase;
+
+    button.addEventListener("click", () => {
+      selectedPhrases.push(phrase);
+      updateSentence();
+      status.textContent = "Cümleye eklendi.";
+    });
+
+    phraseButtons.appendChild(button);
+  });
+}
+
+document.querySelectorAll(".category").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".category").forEach((item) => {
+      item.classList.remove("active");
+    });
+
+    button.classList.add("active");
+    showPhrases(button.dataset.category);
+    status.textContent = "";
+  });
+});
+
+customText.addEventListener("input", updateSentence);
+
+document.getElementById("clearButton").addEventListener("click", () => {
+  selectedPhrases = [];
+  customText.value = "";
+  updateSentence();
+  status.textContent = "Cümle temizlendi.";
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+});
+
+document.getElementById("speakButton").addEventListener("click", () => {
+  const text = [
+    ...selectedPhrases,
+    customText.value.trim()
+  ].filter(Boolean).join(" ");
+
+  if (!text) {
+    status.textContent = "Önce bir cümle seç veya yaz.";
+    return;
+  }
+
+  if (!("speechSynthesis" in window)) {
+    status.textContent =
+      "Bu tarayıcı sesli okumayı desteklemiyor.";
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "tr-TR";
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+
+  utterance.onstart = () => {
+    status.textContent = "Cümle seslendiriliyor...";
+  };
+
+  utterance.onend = () => {
+    status.textContent = "Seslendirme tamamlandı.";
+  };
+
+  utterance.onerror = () => {
+    status.textContent =
+      "Ses çalınamadı. Tarayıcını ve ses ayarlarını kontrol et.";
+  };
+
+  window.speechSynthesis.speak(utterance);
+});
+
+showPhrases("ihtiyac");
+</script>
+</body>
+</html>
